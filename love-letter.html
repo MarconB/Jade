@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Little Something For You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --yellow:#FFF4B8;
+    --yellow-deep:#FCE79A;
+    --pink:#F58BA8;
+    --pink-soft:#FBC9D6;
+    --pink-deep:#E36F94;
+    --cream:#FFFBF0;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--yellow);
+    background-image:
+      radial-gradient(circle at 20% 20%, var(--yellow-deep) 0%, transparent 45%),
+      radial-gradient(circle at 80% 80%, var(--yellow-deep) 0%, transparent 45%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 1px, transparent 1px, transparent 3px);
+    font-family:'Quicksand', sans-serif;
+    overflow-x:hidden;
+    min-height:100vh;
+    position:relative;
+    opacity:0;
+    animation:pageFade 1.4s ease forwards;
+  }
+  @keyframes pageFade{to{opacity:1;}}
+
+  .field{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+  .petal{position:absolute;will-change:transform,opacity;}
+
+  .scene{
+    position:relative;
+    z-index:2;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+    text-align:center;
+  }
+
+  .prompt{
+    font-family:'Caveat', cursive;
+    color:var(--pink-deep);
+    font-size:1.4rem;
+    margin-top:18px;
+    opacity:.85;
+    transition:opacity .4s ease;
+  }
+  .hidden{opacity:0; pointer-events:none; height:0; margin:0;}
+
+  /* Envelope */
+  .envelope-wrap{
+    position:relative;
+    width:min(320px, 78vw);
+    height:calc(min(320px, 78vw) * 0.62);
+    cursor:pointer;
+    animation:bob 3.6s ease-in-out infinite;
+    filter:drop-shadow(0 18px 30px rgba(229,110,148,0.35));
+  }
+  .envelope-wrap.opened{animation:none;}
+  @keyframes bob{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-10px);}
+  }
+
+  .envelope{position:absolute; inset:0;}
+  .env-body{
+    position:absolute; inset:0;
+    background:linear-gradient(160deg, var(--cream), var(--pink-soft));
+    border-radius:14px;
+    border:2px solid var(--pink);
+    overflow:hidden;
+  }
+  .env-shadow-fold{
+    position:absolute; left:0; right:0; bottom:0; top:40%;
+    background:linear-gradient(180deg, transparent, rgba(245,139,168,0.18));
+  }
+  .env-flap-back{
+    position:absolute; top:0; left:0; right:0; height:62%;
+    background:linear-gradient(160deg, var(--pink-soft), var(--pink));
+    clip-path:polygon(0 0, 100% 0, 50% 100%);
+    transform-origin:top center;
+    z-index:1;
+  }
+  .env-flap-front{
+    position:absolute; top:0; left:0; right:0; height:62%;
+    background:linear-gradient(200deg, var(--pink), var(--pink-deep));
+    clip-path:polygon(0 0, 100% 0, 50% 100%);
+    transform-origin:top center;
+    transition:transform 1s cubic-bezier(.4,0,.2,1);
+    z-index:5;
+  }
+  .envelope-wrap.opened .env-flap-front{transform:rotateX(180deg);}
+
+  .seal{
+    position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    width:46px; height:46px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--pink), var(--pink-deep));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.15);
+    z-index:6;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .envelope-wrap.opened .seal{opacity:0; transform:translate(-50%,-50%) scale(0.4);}
+  .seal svg{width:22px; height:22px;}
+
+  .letter-peek{
+    position:absolute; left:8%; right:8%; bottom:6%;
+    top:20%;
+    background:var(--cream);
+    border-radius:8px 8px 0 0;
+    box-shadow:0 -2px 8px rgba(0,0,0,.06);
+    transform:translateY(100%);
+    transition:transform .9s cubic-bezier(.34,1.3,.4,1) .5s;
+    z-index:3;
+  }
+  .envelope-wrap.opened .letter-peek{transform:translateY(10%);}
+
+  .instruction{
+    font-family:'Caveat', cursive;
+    color:var(--pink-deep);
+    font-size:1.3rem;
+    margin-top:16px;
+  }
+
+  /* Letter modal */
+  .letter-overlay{
+    position:fixed; inset:0; z-index:20;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:radial-gradient(circle at center, rgba(255,244,184,0.4), rgba(245,139,168,0.35));
+    opacity:0; pointer-events:none;
+    transition:opacity .5s ease;
+  }
+  .letter-overlay.show{opacity:1; pointer-events:auto;}
+
+  .letter-card{
+    position:relative;
+    width:min(560px, 92vw);
+    max-height:86vh;
+    overflow-y:auto;
+    background:var(--cream);
+    background-image:repeating-linear-gradient(0deg, rgba(245,139,168,0.05) 0px, rgba(245,139,168,0.05) 1px, transparent 1px, transparent 32px);
+    border-radius:16px;
+    padding:44px 38px 38px;
+    box-shadow:0 30px 60px rgba(229,110,148,0.4);
+    border:1px solid var(--pink-soft);
+    opacity:0;
+    transform:translateY(30px) scale(.96);
+    transition:opacity .7s ease, transform .7s cubic-bezier(.34,1.2,.4,1);
+  }
+  .letter-overlay.show .letter-card{opacity:1; transform:translateY(0) scale(1);}
+
+  .letter-card::before{
+    content:"";
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:60px; height:6px; border-radius:4px;
+    background:var(--pink-soft);
+  }
+
+  .letter-text{
+    font-family:'Caveat', cursive;
+    color:#7a4256;
+    font-size:1.55rem;
+    line-height:1.55;
+    white-space:pre-wrap;
+    margin:0;
+  }
+
+  .close-btn{
+    position:absolute; top:14px; right:16px;
+    width:34px; height:34px; border-radius:50%;
+    border:none; background:var(--pink-soft); color:var(--pink-deep);
+    font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .2s ease;
+  }
+  .close-btn:hover{background:var(--pink);}
+  .close-btn:focus-visible, .envelope-wrap:focus-visible{outline:3px solid var(--pink-deep); outline-offset:4px;}
+
+  @media (max-width:420px){
+    .letter-text{font-size:1.3rem;}
+    .letter-card{padding:36px 22px 28px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.2s !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="field" id="field" aria-hidden="true"></div>
+
+<main class="scene">
+  <div class="envelope-wrap" id="envelope" role="button" tabindex="0" aria-label="Open envelope to read the letter">
+    <div class="envelope">
+      <div class="env-body">
+        <div class="letter-peek"></div>
+        <div class="env-shadow-fold"></div>
+        <div class="env-flap-back"></div>
+      </div>
+      <div class="env-flap-front"></div>
+      <div class="seal">
+        <svg viewBox="0 0 24 24" fill="#FFFBF0"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2 5 5.4 5c1.9 0 3.3 1 4.6 2.6C11.3 6 12.7 5 14.6 5 18 5 19.6 8.4 18 11.7 15.5 16.4 12 21 12 21z"/></svg>
+      </div>
+    </div>
+  </div>
+  <p class="prompt" id="prompt">Click the envelope to open</p>
+</main>
+
+<div class="letter-overlay" id="overlay">
+  <div class="letter-card">
+    <button class="close-btn" id="closeBtn" aria-label="Close letter">✕</button>
+    <p class="letter-text" id="letterText">To Jade,
+
+I just wanted to leave you a little something here.
+Maybe some things are better written than said.
+
+Congratulations on completing your first rot, baby! I just want you to know that I’m so proud of you. I know it wasn’t always easy, but you made it through and you did your best. Seeing you reach this milestone makes me really happy, and I hope you’re proud of yourself too.
+
+With love,
+Accon</p>
+  </div>
+</div>
+
+<script>
+// ---- Ambient petal field ----
+const field = document.getElementById('field');
+const COLORS = ['#F58BA8','#FBC9D6','#FFE9A8'];
+function makePetal(){
+  const el = document.createElement('div');
+  el.className = 'petal';
+  const size = 10 + Math.random()*16;
+  const isFlower = Math.random() > 0.35;
+  el.innerHTML = isFlower
+    ? `<svg width="${size}" height="${size}" viewBox="0 0 32 32"><g fill="${COLORS[Math.floor(Math.random()*COLORS.length)]}" opacity="${0.5+Math.random()*0.4}">
+        <circle cx="16" cy="9" r="7"/><circle cx="23" cy="16" r="7"/><circle cx="16" cy="23" r="7"/><circle cx="9" cy="16" r="7"/>
+        <circle cx="16" cy="16" r="5" fill="#FFF4B8"/></g></svg>`
+    : `<svg width="${size*0.7}" height="${size*0.7}" viewBox="0 0 24 24"><path fill="#F58BA8" opacity="${0.4+Math.random()*0.4}" d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2 5 5.4 5c1.9 0 3.3 1 4.6 2.6C11.3 6 12.7 5 14.6 5 18 5 19.6 8.4 18 11.7 15.5 16.4 12 21 12 21z"/></svg>`;
+
+  const startX = Math.random()*100;
+  const drift = (Math.random()*160 - 80);
+  const duration = 14 + Math.random()*12;
+  const rot = 180 + Math.random()*360;
+  el.style.left = startX+'vw';
+  el.style.top = '-8vh';
+  el.style.opacity = '0';
+  field.appendChild(el);
+
+  el.animate([
+    { transform:`translate(0,0) rotate(0deg)`, opacity:0 },
+    { transform:`translate(${drift*0.3}px, 40vh) rotate(${rot*0.4}deg)`, opacity:1, offset:0.15 },
+    { transform:`translate(${drift}px, 108vh) rotate(${rot}deg)`, opacity:0 }
+  ], { duration: duration*1000, easing:'ease-in-out' }).onfinish = () => el.remove();
+}
+setInterval(makePetal, 650);
+for(let i=0;i<8;i++) setTimeout(makePetal, i*300);
+
+// ---- Envelope interaction ----
+const envelope = document.getElementById('envelope');
+const overlay = document.getElementById('overlay');
+const prompt = document.getElementById('prompt');
+const closeBtn = document.getElementById('closeBtn');
+let opened = false;
+
+function openEnvelope(){
+  if(opened) return;
+  opened = true;
+  envelope.classList.add('opened');
+  prompt.classList.add('hidden');
+  for(let i=0;i<10;i++) setTimeout(makePetal, i*80);
+  setTimeout(()=> overlay.classList.add('show'), 900);
+}
+function closeLetter(){
+  overlay.classList.remove('show');
+}
+envelope.addEventListener('click', openEnvelope);
+envelope.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openEnvelope(); }});
+closeBtn.addEventListener('click', closeLetter);
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeLetter(); });
+</script>
+</body>
+</html>
